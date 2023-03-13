@@ -91,5 +91,5 @@ def create_account(username, password):
 
 
 if __name__ == "__main__":
-    create_account('nam', '123')
+    create_account('nam', '123456')
 
