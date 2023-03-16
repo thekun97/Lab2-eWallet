@@ -1,12 +1,13 @@
-import json
-
-from tinyec import registry
-import secrets
 import hashlib
-from Crypto.Hash import RIPEMD160
+import json
+import os
+import secrets
+
 import base58
 import qrcode
-import os
+from Crypto.Hash import RIPEMD160
+from Crypto.Cipher import AES
+from tinyec import registry
 
 curve = registry.get_curve('secp256r1')
 
@@ -19,7 +20,7 @@ def get_my_key():
     priv_key = secrets.randbelow(curve.field.n)  # k
     g = curve.g
     pub_key = priv_key * g
-    my_priv_key = hex(priv_key)
+    my_priv_key = priv_key
     my_pub_key = pub_key
     return my_priv_key, my_pub_key
 
@@ -66,30 +67,47 @@ def make_qrcode_priv_pub_key(priv, address, dirname):
     return qr_code_priv_name, qr_code_address
 
 
-def create_account(username, password):
-    dirname = f'{username}_data'
+def encrypt_private_key(priv_key, password):
+    _16_byte_password = password.zfill(16)
+    key = _16_byte_password.encode('ascii')
+    cipher = AES.new(key, AES.MODE_EAX)
+    nonce = cipher.nonce
+    cipherpass, tag = cipher.encrypt_and_digest(priv_key.encode('ascii'))
+    return cipherpass, nonce, tag
+
+
+def decrypt_private_key(ciphertext, nonce, password):
+    _16_byte_password = password.zfill(16 - len(password))
+    key = _16_byte_password.encode('ascii')
+    cipher = AES.new(key, AES.MODE_EAX, nonce=nonce)
+    plaintext = cipher.decrypt(ciphertext)
+    return plaintext
+
+
+def create_account(password):
+    priv_key, pub_key_point = get_my_key()
+    cipherpass, nonce, tag = encrypt_private_key(hex(priv_key), password)
+
+    f = open("encryted_password.txt", "wb")
+    f.write(cipherpass)
+    f.write(nonce)
+    f.close()
+
+    address = make_address(pub_key_point)
+    print(cipherpass)
+    dirname = f'data'
     if os.path.isdir(dirname) == False:
         os.mkdir(dirname)
         print("The directory is created.")
     else:
         print("The directory already exists.")
 
-    priv_key, pub_key_point = get_my_key()
-    address = make_address(pub_key_point)
     qr_code_priv_name, qr_code_address = make_qrcode_priv_pub_key(priv_key, address, dirname)
 
-    hashed_password = hashlib.sha512(password.encode('utf-8')).hexdigest()
     json_data_user = {
-        'username': username,
-        'password': hashed_password,
-        'priv_key': qr_code_priv_name,
-        'pub_key': qr_code_address
+        'qr_priv_key': qr_code_priv_name,
+        'pub_key': qr_code_address,
     }
 
     with open(f"{dirname}/data.json", 'w', encoding='utf-8') as f:
         json.dump(json_data_user, f, ensure_ascii=False, indent=4)
-
-
-if __name__ == "__main__":
-    create_account('nam', '123456')
-
