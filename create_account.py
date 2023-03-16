@@ -8,6 +8,7 @@ import qrcode
 from Crypto.Hash import RIPEMD160
 from Crypto.Cipher import AES
 from tinyec import registry
+from read_file import read_file
 
 curve = registry.get_curve('secp256r1')
 
@@ -76,31 +77,35 @@ def encrypt_private_key(priv_key, password):
     return cipherpass, nonce, tag
 
 
-def decrypt_private_key(ciphertext, nonce, password):
-    _16_byte_password = password.zfill(16 - len(password))
+def decrypt_private_key(password):
+    ciphertext, nonce = read_file()
+    _16_byte_password = password.zfill(16)
     key = _16_byte_password.encode('ascii')
     cipher = AES.new(key, AES.MODE_EAX, nonce=nonce)
     plaintext = cipher.decrypt(ciphertext)
-    return plaintext
+    return plaintext.decode('ascii')
 
 
 def create_account(password):
     priv_key, pub_key_point = get_my_key()
+    print(hex(priv_key))
     cipherpass, nonce, tag = encrypt_private_key(hex(priv_key), password)
 
-    f = open("encryted_password.txt", "wb")
-    f.write(cipherpass)
-    f.write(nonce)
-    f.close()
-
     address = make_address(pub_key_point)
-    print(cipherpass)
     dirname = f'data'
     if os.path.isdir(dirname) == False:
         os.mkdir(dirname)
         print("The directory is created.")
     else:
         print("The directory already exists.")
+
+    f = open(f"{dirname}/encryted_password.txt", "wb")
+    f.write(cipherpass)
+    f.close()
+
+    f = open(f"{dirname}/nonce.txt", "wb")
+    f.write(nonce)
+    f.close()
 
     qr_code_priv_name, qr_code_address = make_qrcode_priv_pub_key(priv_key, address, dirname)
 
@@ -111,3 +116,5 @@ def create_account(password):
 
     with open(f"{dirname}/data.json", 'w', encoding='utf-8') as f:
         json.dump(json_data_user, f, ensure_ascii=False, indent=4)
+
+    return address

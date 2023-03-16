@@ -1,11 +1,12 @@
 
 
 def read_file():
-    f = open("encryted_password.txt", "rb")
+    f = open("data/encryted_password.txt", "rb")
     line1 = f.readline()
+    f.close()
+
+    f = open("data/nonce.txt", "rb")
     line2 = f.readline()
-    print(line1, line2)
+    f.close()
 
-
-if __name__ == '__main__':
-    read_file();
+    return line1, line2
