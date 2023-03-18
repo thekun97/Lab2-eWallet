@@ -2,7 +2,6 @@ from typing import Dict
 
 from fastapi import FastAPI
 from nicegui import ui
-from nicegui.events import ValueChangeEventArguments
 
 from create_account import create_account
 from create_account import decrypt_private_key
@@ -25,7 +24,7 @@ def init(app: FastAPI) -> None:
             if password.value == '' or re_password.value == '' or password.value != re_password.value:
                 ui.notify('Password not match', color='negative')
             else:
-                address = create_account(password.value)
+                address, _ = create_account(password.value)
                 session_info['user-data'] = {'address': address}
                 ui.open('/my-wallet')
 
@@ -48,7 +47,7 @@ def init(app: FastAPI) -> None:
 
         def show(key):
             with ui.row().classes('w-full justify-center items-center'):
-                ui.label(key)
+                ui.label(f'Your private key: {key}')
 
         def explore_privte_key() -> None:
             private_key = decrypt_private_key(password.value)
@@ -64,7 +63,7 @@ def init(app: FastAPI) -> None:
                 ui.button('Close', on_click=dialog.close)
 
         with ui.row().classes('w-full justify-center items-center'):
-            ui.label(f'Your public key: {data["address"]}')
+            ui.label(f'Your address: {data["address"]}')
 
         with ui.row().classes('w-full justify-center items-center'):
             ui.button('Get your private key', on_click=dialog.open)

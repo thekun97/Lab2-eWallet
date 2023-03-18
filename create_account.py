@@ -88,7 +88,6 @@ def decrypt_private_key(password):
 
 def create_account(password):
     priv_key, pub_key_point = get_my_key()
-    print(hex(priv_key))
     cipherpass, nonce, tag = encrypt_private_key(hex(priv_key), password)
 
     address = make_address(pub_key_point)
@@ -117,4 +116,4 @@ def create_account(password):
     with open(f"{dirname}/data.json", 'w', encoding='utf-8') as f:
         json.dump(json_data_user, f, ensure_ascii=False, indent=4)
 
-    return address
+    return address, priv_key
