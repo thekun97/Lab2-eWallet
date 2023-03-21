@@ -7,6 +7,7 @@ def get_balance(address: str):
     balance = web3.eth.get_balance(address)
     return balance
 
+
 def pay_transaction(address_1: str, priv_key_1: str, address_2, value: int):
     #get the nonce.  Prevents one from sending the transaction twice
     nonce = web3.eth.get_transaction_count(address_1)
