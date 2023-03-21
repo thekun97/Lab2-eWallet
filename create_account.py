@@ -122,3 +122,21 @@ def create_account(password):
         json.dump(json_data_user, f, ensure_ascii=False, indent=4)
 
     return address, priv_key
+
+
+def import_your_wallet(private_key, password):
+    w3 = Web3(Web3.HTTPProvider(ganache_url))
+    cipherpass, nonce, tag = encrypt_private_key(private_key, password)
+    account = w3.eth.account.from_key(private_key)
+    dirname = f'data'
+    if os.path.isdir(dirname) == False:
+        os.mkdir(dirname)
+        print("The directory is created.")
+    else:
+        print("The directory already exists.")
+
+    f = open(f"{dirname}/encryted_password.txt", "wb")
+    f.write(cipherpass)
+    f.close()
+
+    return account.address, account.key

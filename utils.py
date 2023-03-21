@@ -13,8 +13,7 @@ def get_balance(address):
 def pay_transaction(from_address, password, to_address, value: int):
     private_key = decrypt_private_key(password)
 
-    nonce = web3.eth.get_transaction_count(from_address)
-
+    #build a transaction in a dictionary
     try:
         signed_txn = web3.eth.account.sign_transaction(dict(
             nonce=web3.eth.get_transaction_count(from_address),
@@ -33,3 +32,26 @@ def pay_transaction(from_address, password, to_address, value: int):
         return True
     except:
         return False
+
+
+def get_history(address: str, num_blocks: int = 10):
+    # request the latest block number
+    end = web3.eth.block_number
+
+    # latest block number minus 100 blocks
+    start = end - num_blocks
+
+    # create an empty dictionary we will add transaction data to
+    tx_dictionary = {}
+
+
+    print(f"Started filtering through block number {start} to {end} for transactions involving the address - {address}...")
+    for x in range(start, end):
+        block = web3.eth.get_block(x, True)
+        for transaction in block.transactions:
+            if transaction['to'] == address or transaction['from'] == address:
+                hashStr = transaction['hash'].hex()
+                tx_dictionary[hashStr] = transaction
+    print(f"Finished searching blocks {start} through {end} and found {len(tx_dictionary)} transactions")
+
+    return tx_dictionary
