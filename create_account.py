@@ -115,7 +115,7 @@ def create_account(password):
 
     json_data_user = {
         'qr_priv_key': qr_code_priv_name,
-        'pub_key': qr_code_address,
+        'qr_pub_key': qr_code_address,
     }
 
     with open(f"{dirname}/data.json", 'w', encoding='utf-8') as f:

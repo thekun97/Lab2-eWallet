@@ -1,17 +1,14 @@
 from typing import Dict
-import uuid
 from fastapi import FastAPI
 from fastapi import Request
-from nicegui import app, ui
+from nicegui import ui
 from fastapi.responses import RedirectResponse
 
 from create_account import create_account
 from create_account import decrypt_private_key
-from starlette.middleware.sessions import SessionMiddleware
+from utils import get_balance, pay_transaction
 
 session_info: Dict[str, Dict] = {}
-
-app.add_middleware(SessionMiddleware, secret_key='some_random_string')
 
 
 def init(app: FastAPI) -> None:
@@ -65,7 +62,11 @@ def init(app: FastAPI) -> None:
             session_info['private_key'] = {'private_key': private_key}
             show(private_key)
 
+        def send_transaction():
+            pay_transaction(data['address'], password, address, token.value)
+
         data = session_info['user']
+        balance = get_balance(data['address'])
         with ui.dialog() as dialog, ui.card().style('width: 700em'):
             with ui.row().classes('w-full justify-center items-center column'):
                 password = ui.input('Enter your password').props('type=password')
@@ -73,10 +74,25 @@ def init(app: FastAPI) -> None:
                 ui.button('Explore private key', on_click=explore_privte_key)
                 ui.button('Close', on_click=dialog.close)
 
+        with ui.dialog() as send_dialog, ui.card().style('width: 700em'):
+            with ui.row().classes('w-full justify-center items-center column'):
+                address = ui.input('Enter destination address').props('type=text')
+
+            with ui.row().classes('w-full justify-center items-center column'):
+                token = ui.input('Enter value').props('type=text')
+
+            with ui.row().classes('w-full justify-center items-center row'):
+                ui.button('Send', on_click=send_transaction)
+                ui.button('Close', on_click=send_dialog.close)
+
         with ui.row().classes('w-full justify-center items-center'):
             ui.label(f'Your address: {data["address"]}')
 
         with ui.row().classes('w-full justify-center items-center'):
+            ui.label(f'Your balance: {balance}')
+
+        with ui.row().classes('w-full justify-center items-center'):
             ui.button('Get your private key', on_click=dialog.open)
+            ui.button('Send', on_click=send_dialog.open)
 
     ui.run_with(app)
