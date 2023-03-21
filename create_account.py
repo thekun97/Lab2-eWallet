@@ -2,6 +2,7 @@ import hashlib
 import json
 import os
 import secrets
+from web3 import Web3
 
 import base58
 import qrcode
@@ -11,6 +12,7 @@ from tinyec import registry
 from read_file import read_file
 
 curve = registry.get_curve('secp256r1')
+ganache_url = 'https://goerli.infura.io/v3/523a160abf724360909cd4a401af68ae'
 
 
 def compress_point(point):
@@ -87,10 +89,13 @@ def decrypt_private_key(password):
 
 
 def create_account(password):
-    priv_key, pub_key_point = get_my_key()
-    cipherpass, nonce, tag = encrypt_private_key(hex(priv_key), password)
+    web3 = Web3(Web3.HTTPProvider(ganache_url))
+    acc = web3.eth.account.create()
+    address = acc.address
+    priv_key = web3.to_hex(acc._private_key)
 
-    address = make_address(pub_key_point)
+    cipherpass, nonce, tag = encrypt_private_key(priv_key, password)
+
     dirname = f'data'
     if os.path.isdir(dirname) == False:
         os.mkdir(dirname)

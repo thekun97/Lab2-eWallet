@@ -12,6 +12,13 @@ session_info: Dict[str, Dict] = {}
 def init(app: FastAPI) -> None:
     @ui.page('/')
     def index():
+        data = None
+        if 'user-data' in session_info:
+            data = session_info['user-data']
+            print(data)
+            if data["authenticated"]:
+                ui.open('/my-wallet')
+
         with ui.row().classes('mt-8 w-full justify-center items-center'):
             ui.label('Welcome to Kun Chain')
 
@@ -25,7 +32,7 @@ def init(app: FastAPI) -> None:
                 ui.notify('Password not match', color='negative')
             else:
                 address, _ = create_account(password.value)
-                session_info['user-data'] = {'address': address}
+                session_info['user-data'] = {'address': address, 'authenticated': True}
                 ui.open('/my-wallet')
 
         with ui.row().classes('mt-8 w-full justify-center items-center'):
