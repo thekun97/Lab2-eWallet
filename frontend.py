@@ -119,7 +119,7 @@ def init(app: FastAPI) -> None:
                 address = ui.input('Enter destination address').props('type=text').style('width: 300px')
 
             with ui.row().classes('w-full justify-center items-center column'):
-                token = ui.input('Enter value').props('type=text').style('width: 300px')
+                token = ui.input('Enter value (wei)').props('type=text').style('width: 300px')
 
             with ui.row().classes('w-full justify-center items-center column'):
                 password_send = ui.input('Enter your password').props('type=text').style('width: 300px')
