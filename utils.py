@@ -10,28 +10,24 @@ def get_balance(address):
     return balance
 
 
-def pay_transaction(from_address, password, to_address, value: int):
+def pay_transaction(from_address, password, to_address, value):
     private_key = decrypt_private_key(password)
 
-    #build a transaction in a dictionary
-    try:
-        signed_txn = web3.eth.account.sign_transaction(dict(
-            nonce=web3.eth.get_transaction_count(from_address),
-            maxFeePerGas=web3.to_wei(250, 'gwei'),
-            maxPriorityFeePerGas=web3.to_wei(2, 'gwei'),
-            gas=21000,
-            to=to_address,
-            value=value,
-            data=b'',
-            chainId=5,
-        ),
-        private_key,
-        )
-        tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-        print(web3.to_hex(tx_hash))
-        return True
-    except:
-        return False
+    signed_txn = web3.eth.account.sign_transaction(dict(
+        nonce=web3.eth.get_transaction_count(from_address),
+        maxFeePerGas=web3.to_wei(250, 'gwei'),
+        maxPriorityFeePerGas=web3.to_wei(2, 'gwei'),
+        gas=21000,
+        to=to_address,
+        value=int(value),
+        data=b'',
+        chainId=5,
+    ),
+    private_key,
+    )
+    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    print('AAAAA',web3.to_hex(tx_hash))
+    return web3.to_hex(tx_hash)
 
 
 def get_history(address: str, num_blocks: int = 10):

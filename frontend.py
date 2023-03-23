@@ -77,6 +77,9 @@ def init(app: FastAPI) -> None:
                 ui.label(f'Your private key: {key}')
 
         def show_history(object_transaction):
+            with ui.row().classes('w-full justify-center items-center'):
+                ui.label(f'List your transactions')
+
             for hashed_tx, info_tx in object_transaction.items():
                 with ui.row().classes('w-full justify-center items-center'):
                     ui.label(f'Hash: {hashed_tx}')
@@ -84,17 +87,26 @@ def init(app: FastAPI) -> None:
                     ui.label(f'To: {info_tx["to"]}')
                     ui.label(f'Value: {info_tx["value"]}')
 
+        def success_transaction(result):
+            with ui.row().classes('w-full justify-center items-center'):
+                ui.label(f'Your transaction was successful, the hashed transaction is: {result}')
+
         def explore_privte_key() -> None:
             private_key = decrypt_private_key(password.value)
             session_info['private_key'] = {'private_key': private_key}
             show(private_key)
 
         def explore_history():
-            result = get_history('0xBA6DED1654b539A7b894F3de6A5EF5A4863BFAA5')
+            result = get_history(data['address'])
             show_history(result)
 
+        def send_transaction():
+            result = pay_transaction(data["address"], password_send.value, address.value, token.value)
+            if result:
+                success_transaction(result)
+
         data = session_info['user']
-        balance = get_balance('0xBA6DED1654b539A7b894F3de6A5EF5A4863BFAA5')
+        balance = get_balance(data['address'])
         with ui.dialog() as dialog, ui.card().style('width: 700em'):
             with ui.row().classes('w-full justify-center items-center column'):
                 password = ui.input('Enter your password').props('type=password').style('width: 300px')
@@ -109,23 +121,23 @@ def init(app: FastAPI) -> None:
             with ui.row().classes('w-full justify-center items-center column'):
                 token = ui.input('Enter value').props('type=text').style('width: 300px')
 
+            with ui.row().classes('w-full justify-center items-center column'):
+                password_send = ui.input('Enter your password').props('type=text').style('width: 300px')
+
             with ui.row().classes('w-full justify-center items-center row'):
-                ui.button('Send', on_click=lambda x: x)
+                ui.button('Send', on_click=send_transaction)
                 ui.button('Close', on_click=send_dialog.close)
 
         with ui.row().classes('w-full justify-center items-center'):
             ui.label(f'Your address: {data["address"]}')
 
         with ui.row().classes('w-full justify-center items-center'):
-            ui.label(f'Your balance: {balance}')
+            ui.label(f'Your balance: {balance} wei = {balance / 10 ** 18} ETH')
 
         with ui.row().classes('w-full justify-center items-center'):
             ui.button('Get your private key', on_click=dialog.open)
-            ui.button('Send', on_click=send_dialog.open)
-
-        with ui.row().classes('w-full justify-center items-center'):
             ui.button('Get your history transaction', on_click=explore_history)
-        with ui.row().classes('w-full justify-center items-center'):
+            ui.button('Send', on_click=send_dialog.open)
             ui.button('Logout', on_click=lambda: ui.open('/logout'))
 
     @ui.page('/logout')
