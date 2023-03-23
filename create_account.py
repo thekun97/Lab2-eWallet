@@ -2,6 +2,7 @@ import hashlib
 import json
 import os
 import secrets
+from web3 import Web3
 
 import base58
 import qrcode
@@ -9,8 +10,10 @@ from Crypto.Hash import RIPEMD160
 from Crypto.Cipher import AES
 from tinyec import registry
 from read_file import read_file
+from hdwallet_mnemonic import create_master_key
 
 curve = registry.get_curve('secp256r1')
+ganache_url = 'https://goerli.infura.io/v3/523a160abf724360909cd4a401af68ae'
 
 
 def compress_point(point):
@@ -87,10 +90,14 @@ def decrypt_private_key(password):
 
 
 def create_account(password):
-    priv_key, pub_key_point = get_my_key()
-    cipherpass, nonce, tag = encrypt_private_key(hex(priv_key), password)
+    web3 = Web3(Web3.HTTPProvider(ganache_url))
+    acc = web3.eth.account.create()
+    address = acc.address
+    priv_key = web3.to_hex(acc.key)
 
-    address = make_address(pub_key_point)
+    # priv_key, address = create_master_key(password)
+    cipherpass, nonce, tag = encrypt_private_key(priv_key, password)
+
     dirname = f'data'
     if os.path.isdir(dirname) == False:
         os.mkdir(dirname)
@@ -110,10 +117,43 @@ def create_account(password):
 
     json_data_user = {
         'qr_priv_key': qr_code_priv_name,
-        'pub_key': qr_code_address,
+        'qr_pub_key': qr_code_address,
     }
 
     with open(f"{dirname}/data.json", 'w', encoding='utf-8') as f:
         json.dump(json_data_user, f, ensure_ascii=False, indent=4)
 
     return address, priv_key
+
+
+def import_your_wallet(private_key, password):
+    w3 = Web3(Web3.HTTPProvider(ganache_url))
+    account = w3.eth.account.from_key(private_key)
+
+    cipherpass, nonce, tag = encrypt_private_key(private_key, password)
+    dirname = f'data'
+    if os.path.isdir(dirname) == False:
+        os.mkdir(dirname)
+        print("The directory is created.")
+    else:
+        print("The directory already exists.")
+
+    f = open(f"{dirname}/encryted_password.txt", "wb")
+    f.write(cipherpass)
+    f.close()
+
+    f = open(f"{dirname}/nonce.txt", "wb")
+    f.write(nonce)
+    f.close()
+
+    qr_code_priv_name, qr_code_address = make_qrcode_priv_pub_key(private_key, account.address, dirname)
+
+    json_data_user = {
+        'qr_priv_key': qr_code_priv_name,
+        'qr_pub_key': qr_code_address,
+    }
+
+    with open(f"{dirname}/data.json", 'w', encoding='utf-8') as f:
+        json.dump(json_data_user, f, ensure_ascii=False, indent=4)
+
+    return account.address, account.key
